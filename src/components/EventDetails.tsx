@@ -28,7 +28,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
       }
     };
     fetchParticipants();
-  }, [event.id, getEventParticipants, withdrawFromEvent]);
+  }, [event.id, getEventParticipants, withdrawFromEvent, setParticipants]);
 
   const currentUserParticipation = participants.find(p => p.user_id === user?.id);
   const isParticipant = !!currentUserParticipation;
@@ -59,14 +59,14 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
-      timeZone: 'UTC' 
+      timeZone: 'UTC'
     });
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={event.title} maxWidth="4xl">
       <div className="flex flex-col md:flex-row md:space-x-8 ">
-        
+
         <div className="md:w-2/3">
           <div className="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden mb-4">
             <img
@@ -79,7 +79,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
           <p><strong>Date:</strong> {formatDate(event.date)}</p>
           <p><strong>Location:</strong> {event.location}</p>
           <p><strong>Category:</strong> {event.category?.name || 'Unknown'}</p>
-          
+
           <div className="mt-6 flex justify-end space-x-4">
             {isCreator ? (
               <>
