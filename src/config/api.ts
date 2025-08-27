@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://127.0.0.1:3000';
+export const API_BASE_URL = 'https://event-backend-rails.onrender.com';
 
 export const getAuthHeaders = (token: string) => ({
   'Content-Type': 'application/json',
