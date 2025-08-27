@@ -18,6 +18,7 @@ const Events: React.FC = () => {
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { getEvents, deleteEvent } = useEvents();
   const { getCategories } = useCategories();
@@ -29,7 +30,7 @@ const Events: React.FC = () => {
     const fetchData = async () => {
       try {
         const [eventsData, categoriesData, userData] = await Promise.all([
-          getEvents(),
+          getEvents(searchTerm),
           getCategories(),
           getUsers()
         ]);
@@ -44,7 +45,7 @@ const Events: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [searchTerm]);
 
   const userMap = useMemo(() => {
     const map = new Map<number, string>();
@@ -135,6 +136,16 @@ const Events: React.FC = () => {
               Add Event
             </button>
           )}
+        </div>
+
+        <div className="mb-8">
+          <input
+            type="text"
+            placeholder="Search by event title or category..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-purple-500 focus:border-purple-500"
+          />
         </div>
 
         {events.length === 0 ? (

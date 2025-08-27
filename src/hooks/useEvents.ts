@@ -6,12 +6,18 @@ export const useEvents = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getEvents = useCallback( async (): Promise<Event[]> => {
+  const getEvents = useCallback( async (searchTerm: string = ''): Promise<Event[]> => {
     setLoading(true);
     setError(null);
     
+    let url = `${API_BASE_URL}/events`;
+
+    if (searchTerm) {
+      url += `?query=${encodeURIComponent(searchTerm)}`;
+    }
+
     try {
-      const response = await fetch(`${API_BASE_URL}/events`, {
+      const response = await fetch(url, {
         method: 'GET',
         headers: getHeaders()
       });

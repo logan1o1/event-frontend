@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { API_BASE_URL } from '../config/api';
-import type { Admin, DashboardStats, Event as EventType, EventFormData } from '../types';
+import type { Admin, DashboardStats, Event as EventType, EventFormData, Category } from '../types';
 
 
 export const useAdmin = () => {
@@ -96,8 +96,12 @@ export const useAdmin = () => {
   );
 
   const getAdminEvents = useCallback(
-    async (token: string): Promise<EventType[]> => {
-      const response = await apiCall<{ events: EventType[] }>('/admin/events', 'GET', token);
+    async (token: string, searchTerm: string = ''): Promise<EventType[]> => {
+      let url = `/admin/events`
+      if (searchTerm) {
+        url += `?query=${encodeURIComponent(searchTerm)}`;
+      }
+      const response = await apiCall<{ events: EventType[] }>(url, 'GET', token);
       return response.events; 
     },
     [apiCall]
@@ -119,7 +123,15 @@ export const useAdmin = () => {
     [apiCall]
   );
 
+  const createCategory = useCallback(
+    (categoryName: string, token: string) => 
+      // The body is nested to match Rails' strong parameters: params.require(:category).permit(:name)
+      apiCall<Category>('/admin/categories', 'POST', token, { category: { name: categoryName } }),
+    [apiCall]
+  );
+
   return {
+    createCategory,
     updateAdminEvent,
     adminLogin,
     adminLogout,

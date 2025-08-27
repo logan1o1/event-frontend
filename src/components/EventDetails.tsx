@@ -18,7 +18,6 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
   const { withdrawFromEvent, applyToEvent, loading, error } = useParticipants();
 
   const [participants, setParticipants] = useState<Participant[]>([]);
-  // I've renamed `getEventParticipants` to `getParticipants` to match the hook I provided earlier.
   const { getEventParticipants } = useParticipants();
 
   useEffect(() => {
@@ -52,8 +51,19 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC' 
+    });
+  };
+
   return (
-    // Use a wider modal for the side-by-side layout
     <Modal isOpen={isOpen} onClose={onClose} title={event.title} maxWidth="4xl">
       <div className="flex flex-col md:flex-row md:space-x-8 ">
         
@@ -66,7 +76,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
             />
           </div>
           <p className="mb-4">{event.description}</p>
-          <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
+          <p><strong>Date:</strong> {formatDate(event.date)}</p>
           <p><strong>Location:</strong> {event.location}</p>
           <p><strong>Category:</strong> {event.category?.name || 'Unknown'}</p>
           
