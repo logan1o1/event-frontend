@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { API_BASE_URL, getHeaders } from '../config/api';
 import type { UserLoginData, UserRegistrationData, AuthResponse, User } from '../types';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const login = async (credentials: UserLoginData): Promise<AuthResponse | null> => {
     setLoading(true);

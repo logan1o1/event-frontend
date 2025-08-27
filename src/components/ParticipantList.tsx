@@ -1,46 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import type { Participant } from '../types';
-import Modal from './Modal';
 import { useParticipants } from '../hooks/useParticipants';
+import { FaUserCircle } from 'react-icons/fa';
 
 interface ParticipantListProps {
-  isOpen: boolean;
-  onClose: () => void;
   eventId: number;
 }
 
-const ParticipantList: React.FC<ParticipantListProps> = ({ isOpen, onClose, eventId }) => {
+const ParticipantList: React.FC<ParticipantListProps> = ({ eventId }) => {
   const [participants, setParticipants] = useState<Participant[]>([]);
+  // I've renamed `getEventParticipants` to `getParticipants` to match the hook I provided earlier.
   const { getEventParticipants, loading, error } = useParticipants();
 
   useEffect(() => {
-    if (isOpen) {
-      const fetchParticipants = async () => {
+    // Since this is always open, we just fetch the data when the component mounts.
+    const fetchParticipants = async () => {
+      if (eventId) {
         const data = await getEventParticipants(eventId);
         setParticipants(data);
-      };
-      fetchParticipants();
-    }
-  }, [isOpen, eventId, getEventParticipants]);
+      }
+    };
+    fetchParticipants();
+  }, [eventId]);
 
+  // This component now returns a simple div instead of a Modal.
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Participants">
-      <div>
-        {loading && <p>Loading participants...</p>}
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {participants.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
-            {participants.map(participant => (
-              <li key={participant.id} className="py-4 flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-900">{participant.user.username}</span>
+    <div className="bg-gray-50 p-4 rounded-lg border h-full">
+      <h3 className="text-lg font-semibold mb-4 text-gray-800">Participants</h3>
+      {loading && <p className="text-sm text-gray-500">Loading...</p>}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      
+      {!loading && !error && (
+        <ul className="space-y-3">
+          {participants.length > 0 ? (
+            participants.map(p => (
+              <li key={p.id} className="flex items-center">
+                <FaUserCircle className="h-6 w-6 text-gray-400 mr-3" />
+                <span className="text-gray-700">{p.user.username}</span>
               </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No participants yet.</p>
-        )}
-      </div>
-    </Modal>
+            ))
+          ) : (
+            <p className="text-gray-500 text-sm">No one has applied yet.</p>
+          )}
+        </ul>
+      )}
+    </div>
   );
 };
 

@@ -4,6 +4,7 @@ import { useCategories } from '../hooks/useCategories';
 import type { Event, Category, EventFormData } from '../types';
 import Modal from './Modal';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdmin } from '../hooks/useAdmin';
 
 interface EventFormProps {
   isOpen: boolean;
@@ -22,10 +23,39 @@ const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, event, onEventCr
     category_id: 0,
     poster_url: ''
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { createEvent, updateEvent, loading, error } = useEvents();
   const { categories, getCategories, loading: categoriesLoading, error: categoriesError } = useCategories();
-  const { token } = useAuth();
+  const { token, isAdminLoggedIn } = useAuth();
+  const { updateAdminEvent } = useAdmin();
+
+  // Renamed for clarity and corrected typo
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    const data = new FormData();
+    data.append('file', selectedFile);
+    data.append('upload_preset', 'upload_img'); // Replace with your Cloudinary preset
+    data.append('cloud_name', 'dxf7nv9mt');  
+
+    try {
+      const result = await fetch("https://api.cloudinary.com/v1_1/dxf7nv9mt/image/upload", {
+        method: "POST",
+        body: data
+      });
+      const uploadResponse = await result.json();
+      
+      // --- Update the form data with the URL from Cloudinary ---
+      setFormData(prev => ({ ...prev, poster_url: uploadResponse.url }));
+    } catch (e) {
+      console.error("Image upload failed:", e);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     getCategories();
@@ -42,38 +72,42 @@ const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, event, onEventCr
         poster_url: event.poster_url
       });
     } else {
+      // Reset form on open for "create" mode
       setFormData({
-        title: '',
-        description: '',
-        date: '',
-        location: '',
-        category_id: 0,
-        poster_url: ''
+        title: '', description: '', date: '', location: '', category_id: 0, poster_url: ''
       });
     }
-  }, [event]);
+    setSelectedFile(null); // Reset file input when event changes
+  }, [event, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-
+    
     const eventData = { ...formData, category_id: Number(formData.category_id) };
+    
     let response: Event | null = null;
     if (event) {
-      response = await updateEvent(event.id, eventData, token);
-      if (response) {
-        onEventUpdated(response);
-      }
+      if (isAdminLoggedIn) {
+        response = await updateAdminEvent(event.id, eventData, token);
+      } else {
+        response = await updateEvent(event.id, eventData, token);
+        if (response) onEventUpdated(response);
+      }      
     } else {
       response = await createEvent(eventData, token);
-      if (response) {
-        onEventCreated(response);
-      }
+      if (response) onEventCreated(response);
     }
     if (response) {
       onClose();
@@ -101,8 +135,29 @@ const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, event, onEventCr
             <input type="text" name="location" id="location" value={formData.location} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required />
           </div>
           <div>
-            <label htmlFor="poster_url" className="block text-sm font-medium text-gray-700">Poster URL</label>
-            <input type="text" name="poster_url" id="poster_url" value={formData.poster_url} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+            <label htmlFor="poster_file" className="block text-sm font-medium text-gray-700">Poster Image</label>
+            <div className="mt-1 flex items-center space-x-4">
+              <input 
+                type="file" 
+                id="poster_file" 
+                onChange={handleFileChange} 
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
+              />
+              <button 
+                type="button" 
+                onClick={handleFileUpload} 
+                disabled={!selectedFile || isUploading}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 text-sm whitespace-nowrap"
+              >
+                {isUploading ? 'Uploading...' : 'Upload'}
+              </button>
+            </div>
+            {/* Image Preview */}
+            {formData.poster_url && (
+              <div className="mt-4">
+                <img src={formData.poster_url} alt="Poster preview" className="w-full h-auto rounded-md object-cover max-h-48" />
+              </div>
+            )}
           </div>
           <div>
             <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">Category</label>

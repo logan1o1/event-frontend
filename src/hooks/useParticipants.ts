@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { API_BASE_URL, getAuthHeaders, getHeaders } from '../config/api';
 import type { Participant } from '../types';
 
@@ -6,7 +6,7 @@ export const useParticipants = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getEventParticipants = async (eventId: number): Promise<Participant[]> => {
+  const getEventParticipants =useCallback( async (eventId: number): Promise<Participant[]> => {
     setLoading(true);
     setError(null);
     
@@ -28,9 +28,9 @@ export const useParticipants = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [])
 
-  const applyToEvent = async (eventId: number, token: string): Promise<Participant | null> => {
+  const applyToEvent = useCallback( async (eventId: number, token: string): Promise<Participant | null> => {
     setLoading(true);
     setError(null);
     
@@ -53,9 +53,9 @@ export const useParticipants = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [])
 
-  const withdrawFromEvent = async (participantId: number, token: string): Promise<boolean> => {
+  const withdrawFromEvent = useCallback( async (participantId: number, token: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
     
@@ -76,7 +76,7 @@ export const useParticipants = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [])
 
   return {
     getEventParticipants,

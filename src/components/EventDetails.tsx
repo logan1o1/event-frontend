@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import type { Event, User } from '../types';
+import React, { useEffect, useState } from 'react';
+import type { Event, Participant } from '../types';
 import Modal from './Modal';
 import { useAuth } from '../contexts/AuthContext';
 import { useParticipants } from '../hooks/useParticipants';
@@ -15,8 +15,24 @@ interface EventDetailsProps {
 
 const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onUpdate, onDelete }) => {
   const { user, token } = useAuth();
-  const { applyToEvent, loading, error } = useParticipants();
-  const [isParticipantListOpen, setIsParticipantListOpen] = useState(false);
+  const { withdrawFromEvent, applyToEvent, loading, error } = useParticipants();
+
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  // I've renamed `getEventParticipants` to `getParticipants` to match the hook I provided earlier.
+  const { getEventParticipants } = useParticipants();
+
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      if (event.id) {
+        const data = await getEventParticipants(event.id);
+        setParticipants(data);
+      }
+    };
+    fetchParticipants();
+  }, [event.id, getEventParticipants, withdrawFromEvent]);
+
+  const currentUserParticipation = participants.find(p => p.user_id === user?.id);
+  const isParticipant = !!currentUserParticipation;
 
   const isCreator = user && user.id === event.user_id;
 
@@ -28,26 +44,50 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!token || !currentUserParticipation) return;
+    const success = await withdrawFromEvent(currentUserParticipation.id, token);
+    if (success) {
+      onClose();
+    }
+  };
+
   return (
-    <>
-      <Modal isOpen={isOpen} onClose={onClose} title={event.title}>
-        <div>
+    // Use a wider modal for the side-by-side layout
+    <Modal isOpen={isOpen} onClose={onClose} title={event.title} maxWidth="4xl">
+      <div className="flex flex-col md:flex-row md:space-x-8 ">
+        
+        <div className="md:w-2/3">
+          <div className="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden mb-4">
+            <img
+              src={event.poster_url || 'https://via.placeholder.com/400x225?text=Event+Poster'}
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
           <p className="mb-4">{event.description}</p>
           <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
           <p><strong>Location:</strong> {event.location}</p>
-          <p><strong>Category:</strong> {event.category.name}</p>
-
+          <p><strong>Category:</strong> {event.category?.name || 'Unknown'}</p>
+          
           <div className="mt-6 flex justify-end space-x-4">
             {isCreator ? (
               <>
-                <button onClick={() => setIsParticipantListOpen(true)} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">View Participants</button>
                 <button onClick={() => onUpdate(event)} className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">Update</button>
                 <button onClick={() => onDelete(event.id)} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Delete</button>
               </>
             ) : (
               <>
                 {user && (
-                  <button onClick={handleApply} disabled={loading} className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50">{loading ? 'Applying...' : 'Apply'}</button>
+                  isParticipant ? (
+                    <button onClick={handleWithdraw} disabled={loading} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50">
+                      {loading ? 'Withdrawing...' : 'Withdraw'}
+                    </button>
+                  ) : (
+                    <button onClick={handleApply} disabled={loading} className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50">
+                      {loading ? 'Applying...' : 'Apply'}
+                    </button>
+                  )
                 )}
               </>
             )}
@@ -55,14 +95,13 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
           </div>
           {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
         </div>
-      </Modal>
 
-      <ParticipantList
-        isOpen={isParticipantListOpen}
-        onClose={() => setIsParticipantListOpen(false)}
-        eventId={event.id}
-      />
-    </>
+        <div className="md:w-1/3 mt-8 md:mt-0">
+          <ParticipantList eventId={event.id} />
+        </div>
+
+      </div>
+    </Modal>
   );
 };
 

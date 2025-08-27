@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useEvents } from '../hooks/useEvents';
 import { useCategories } from '../hooks/useCategories';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,7 +29,7 @@ const Events: React.FC = () => {
         ]);
         setEvents(eventsData);
         console.log(eventsData)
-        // setCategories(categoriesData);
+        setCategories(categoriesData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -39,6 +39,14 @@ const Events: React.FC = () => {
 
     fetchData();
   }, []);
+
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, string>();
+    categories.forEach(cat => {
+      map.set(cat.id, cat.name); // Assumes category object has `name` property
+    });
+    return map;
+  }, [categories]);
 
   const handleEventCreated = (event: Event) => {
     setEvents(prev => [event, ...prev]);
@@ -81,11 +89,6 @@ const Events: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const getCategoryName = (categoryId: number) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : 'Unknown Category';
   };
 
   if (loading) {
@@ -140,9 +143,9 @@ const Events: React.FC = () => {
                   />
                 </div>
                 <div className="p-6">
-                  <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mb-3">
+                <div className="inline-flex items-center ...">
                     <FaTag className="mr-1" />
-                    {getCategoryName(event.category_id)}
+                    {categoryMap.get(event.category_id) || 'Unknown Category'}
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
                     {event.title}

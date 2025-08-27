@@ -41,6 +41,7 @@ export interface Event {
   updated_at: string;
   user: User;
   category: Category;
+  participants: Participant[];
 }
 
 export interface EventFormData {

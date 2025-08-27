@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { API_BASE_URL } from '../config/api';
-import type { Admin, DashboardStats, Event as EventType, Category, Participant } from '../types';
+import type { Admin, DashboardStats, Event as EventType, EventFormData, Category, Participant } from '../types';
 
 
 export const useAdmin = () => {
@@ -9,7 +9,7 @@ export const useAdmin = () => {
 
   const apiCall = useCallback(async <T>(
     endpoint: string,
-    method: 'GET' | 'POST' | 'DELETE',
+    method: 'GET' | 'POST' | 'DELETE' | 'PUT',
     token?: string,
     body?: object
   ): Promise<T> => {
@@ -27,6 +27,10 @@ export const useAdmin = () => {
         headers,
         body: body ? JSON.stringify(body) : undefined,
       });
+
+      if (response.status === 204) {
+        return {} as T; 
+      }
 
       const responseData = await response.json();
 
@@ -56,10 +60,35 @@ export const useAdmin = () => {
     [apiCall]
   );
 
-  const adminLogout = useCallback(
-    (token: string) => apiCall('/admins/sign_out', 'DELETE', token),
-    [apiCall]
-  );
+  const adminLogout = useCallback(async (token: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admins/sign_out`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Admin logout failed');
+      }
+      
+      return true;
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      console.error("Logout failed:", errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const getDashboardStats = useCallback(
     (token: string) => apiCall<DashboardStats>('/admin/dashboard', 'GET', token),
@@ -74,6 +103,11 @@ export const useAdmin = () => {
     [apiCall]
   );
   
+  const updateAdminEvent = useCallback(
+    (eventId: number, eventData: EventFormData, token: string) => 
+      apiCall<EventType>(`/admin/events/${eventId}`, 'PUT', token, { event: eventData }),
+    [apiCall]
+  );
   
   const deleteAdminEvent = useCallback(
     (eventId: number, token: string) => apiCall(`/admin/events/${eventId}`, 'DELETE', token),
@@ -86,6 +120,7 @@ export const useAdmin = () => {
   );
 
   return {
+    updateAdminEvent,
     adminLogin,
     adminLogout,
     getDashboardStats,

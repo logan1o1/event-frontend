@@ -3,7 +3,7 @@ import { useAdmin } from '../hooks/useAdmin';
 import { useAuth } from '../contexts/AuthContext';
 import { useUsers } from '../hooks/useUsers';
 import { FaUsers, FaCalendarAlt, FaChartBar, FaTrash, FaEdit, FaEye } from 'react-icons/fa';
-import type { Event, DashboardStats, User } from '../types';
+import type { Event, DashboardStats, User, EventFormData } from '../types';
 import EventForm from '../components/EventForm';
 import EventDetails from '../components/EventDetails';
 
@@ -18,7 +18,7 @@ const AdminPanel: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
-  const { getDashboardStats, getAdminEvents, deleteAdminEvent, loading: apiLoading, error } = useAdmin();
+  const { getDashboardStats, getAdminEvents, deleteAdminEvent, updateAdminEvent, loading: apiLoading, error } = useAdmin();
   const { getUsers } = useUsers();
   const { admin, token } = useAuth();
 
@@ -58,9 +58,19 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  const handleEventUpdated = (updatedEvent: Event) => {
-    setEvents(prev => prev.map(event => event.id === updatedEvent.id ? updatedEvent : event));
+  const handleUpdateEvent = async (eventDataFromForm: Event) => {
+    if (!token) return;
+
+    const { id: eventId, ...eventData } = eventDataFromForm;
+
+    const updatedEventResponse = await updateAdminEvent(eventId, eventData, token);
+
+    if (updatedEventResponse) {
+      setEvents(prev => prev.map(event => event.id === updatedEventResponse.id ? updatedEventResponse : event));
+      setIsEventFormOpen(false);
+    }
   };
+
 
   const openUpdateEventForm = (event: Event) => {
     setEditingEvent(event);
@@ -206,7 +216,7 @@ const AdminPanel: React.FC = () => {
                         />
                         <div>
                           <h4 className="text-sm font-medium text-gray-900">{event.title}</h4>
-                          <p className="text-sm text-gray-500">by {event.user_id}</p>
+                          <p className="text-sm text-gray-500">by {event.user.username}</p>
                         </div>
                       </div>
                       <div className="text-sm text-gray-500">
@@ -304,7 +314,7 @@ const AdminPanel: React.FC = () => {
         onClose={() => setIsEventFormOpen(false)}
         event={editingEvent || undefined}
         onEventCreated={(event) => setEvents(prev => [event, ...prev])}
-        onEventUpdated={handleEventUpdated}
+        onEventUpdated={handleUpdateEvent}
       />
 
       {selectedEvent && (
