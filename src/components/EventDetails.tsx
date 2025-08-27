@@ -28,7 +28,7 @@ const EventDetails: React.FC<EventDetailsProps> = ({ isOpen, onClose, event, onU
       }
     };
     fetchParticipants();
-  }, [event.id, getEventParticipants, withdrawFromEvent, setParticipants]);
+  }, [event.id, getEventParticipants, withdrawFromEvent, isOpen]);
 
   const currentUserParticipation = participants.find(p => p.user_id === user?.id);
   const isParticipant = !!currentUserParticipation;
