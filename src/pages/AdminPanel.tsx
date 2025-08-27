@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAdmin } from '../hooks/useAdmin';
 import { useAuth } from '../contexts/AuthContext';
-import { useUsers } from '../hooks/useUsers';
+// import { useUsers } from '../hooks/useUsers';
 import { FaUsers, FaCalendarAlt, FaChartBar, FaTrash, FaEdit, FaEye } from 'react-icons/fa';
-import type { Event, DashboardStats, User, EventFormData } from '../types';
+import { useAuth as useAuthAPI } from '../hooks/useAuth';
+import type { Event, DashboardStats, User } from '../types';
 import EventForm from '../components/EventForm';
 import EventDetails from '../components/EventDetails';
 
@@ -18,9 +19,10 @@ const AdminPanel: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
-  const { getDashboardStats, getAdminEvents, deleteAdminEvent, updateAdminEvent, loading: apiLoading, error } = useAdmin();
-  const { getUsers } = useUsers();
+  const { getDashboardStats, getAdminEvents, deleteAdminEvent, updateAdminEvent, error } = useAdmin();
+  // const { getUsers } = useUsers();
   const { admin, token } = useAuth();
+  const {getUsers} = useAuthAPI();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,11 +31,11 @@ const AdminPanel: React.FC = () => {
           const [stats, eventsData, usersData] = await Promise.all([
             getDashboardStats(token),
             getAdminEvents(token),
-            getUsers(token)
+            getUsers()
           ]);
           setDashboardStats(stats);
           setEvents(eventsData);
-          setUsers(usersData);
+          setUsers(usersData);          
         }
       } catch (error) {
         console.error('Error fetching admin data:', error);
@@ -46,6 +48,14 @@ const AdminPanel: React.FC = () => {
       fetchData();
     }
   }, [token, getDashboardStats, getAdminEvents, getUsers]);
+
+  const userMap = useMemo(() => {
+    const map = new Map<number, string>();
+    users.forEach(user => {
+      map.set(user.id, user.username);
+    });
+    return map;
+  }, [users]);
 
   const handleDeleteEvent = async (eventId: number) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
@@ -60,11 +70,8 @@ const AdminPanel: React.FC = () => {
 
   const handleUpdateEvent = async (eventDataFromForm: Event) => {
     if (!token) return;
-
     const { id: eventId, ...eventData } = eventDataFromForm;
-
     const updatedEventResponse = await updateAdminEvent(eventId, eventData, token);
-
     if (updatedEventResponse) {
       setEvents(prev => prev.map(event => event.id === updatedEventResponse.id ? updatedEventResponse : event));
       setIsEventFormOpen(false);
@@ -134,16 +141,6 @@ const AdminPanel: React.FC = () => {
               }`}
             >
               Events
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'users'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Users
             </button>
           </nav>
         </div>
@@ -216,7 +213,7 @@ const AdminPanel: React.FC = () => {
                         />
                         <div>
                           <h4 className="text-sm font-medium text-gray-900">{event.title}</h4>
-                          <p className="text-sm text-gray-500">by {event.user.username}</p>
+                          <p className="text-sm text-gray-500">by by {userMap.get(event.user_id) || 'Unknown User'}</p>
                         </div>
                       </div>
                       <div className="text-sm text-gray-500">
@@ -256,7 +253,7 @@ const AdminPanel: React.FC = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{event.user_id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{userMap.get(event.user_id) || 'Unknown User'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
@@ -265,36 +262,6 @@ const AdminPanel: React.FC = () => {
                             <button onClick={() => handleDeleteEvent(event.id)} className="text-red-600 hover:text-red-900"><FaTrash className="h-4 w-4" /></button>
                           </div>
                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'users' && (
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Manage Users</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {users.map((user) => (
-                      <tr key={user.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(user.created_at).toLocaleDateString()}</td>
                       </tr>
                     ))}
                   </tbody>

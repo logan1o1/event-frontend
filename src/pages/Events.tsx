@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useEvents } from '../hooks/useEvents';
 import { useCategories } from '../hooks/useCategories';
+import { useAuth as useAuthAPI } from '../hooks/useAuth';
 import { useAuth } from '../contexts/AuthContext';
 import { FaPlus, FaCalendarAlt, FaMapMarkerAlt, FaUser, FaTag } from 'react-icons/fa';
-import type { Event, Category } from '../types';
+import type { Event, Category, User } from '../types';
 import EventForm from '../components/EventForm';
 import EventDetails from '../components/EventDetails';
 
 const Events: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [isEventFormOpen, setIsEventFormOpen] = useState(false);
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
@@ -19,17 +22,20 @@ const Events: React.FC = () => {
   const { getEvents, deleteEvent } = useEvents();
   const { getCategories } = useCategories();
   const { isUserLoggedIn, token } = useAuth();
+  const {getUsers} = useAuthAPI();
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [eventsData, categoriesData] = await Promise.all([
+        const [eventsData, categoriesData, userData] = await Promise.all([
           getEvents(),
-          getCategories()
+          getCategories(),
+          getUsers()
         ]);
         setEvents(eventsData);
-        console.log(eventsData)
         setCategories(categoriesData);
+        setUsers(userData)
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -39,6 +45,14 @@ const Events: React.FC = () => {
 
     fetchData();
   }, []);
+
+  const userMap = useMemo(() => {
+    const map = new Map<number, string>();
+    users.forEach(user => {
+      map.set(user.id, user.username);
+    });
+    return map;
+  }, [users]);
 
   const categoryMap = useMemo(() => {
     const map = new Map<number, string>();
@@ -164,7 +178,7 @@ const Events: React.FC = () => {
                     </div>
                     <div className="flex items-center text-sm text-gray-500">
                       <FaUser className="mr-2 text-green-500" />
-                      {event.user.username}
+                      {userMap.get(event.user_id) || 'Unknown User'}
                     </div>
                   </div>
                 </div>

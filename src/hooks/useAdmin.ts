@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { API_BASE_URL } from '../config/api';
-import type { Admin, DashboardStats, Event as EventType, EventFormData, Category, Participant } from '../types';
+import type { Admin, DashboardStats, Event as EventType, EventFormData } from '../types';
 
 
 export const useAdmin = () => {

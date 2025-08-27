@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useEvents } from '../hooks/useEvents';
 import { useCategories } from '../hooks/useCategories';
-import type { Event, Category, EventFormData } from '../types';
+import type { Event, EventFormData } from '../types';
 import Modal from './Modal';
 import { useAuth } from '../contexts/AuthContext';
 import { useAdmin } from '../hooks/useAdmin';
@@ -31,14 +31,13 @@ const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, event, onEventCr
   const { token, isAdminLoggedIn } = useAuth();
   const { updateAdminEvent } = useAdmin();
 
-  // Renamed for clarity and corrected typo
   const handleFileUpload = async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
     const data = new FormData();
     data.append('file', selectedFile);
-    data.append('upload_preset', 'upload_img'); // Replace with your Cloudinary preset
+    data.append('upload_preset', 'upload_img');
     data.append('cloud_name', 'dxf7nv9mt');  
 
     try {
@@ -48,7 +47,6 @@ const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, event, onEventCr
       });
       const uploadResponse = await result.json();
       
-      // --- Update the form data with the URL from Cloudinary ---
       setFormData(prev => ({ ...prev, poster_url: uploadResponse.url }));
     } catch (e) {
       console.error("Image upload failed:", e);
@@ -61,23 +59,34 @@ const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, event, onEventCr
     getCategories();
   }, [getCategories]);
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC' 
+    });
+  };
+
   useEffect(() => {
     if (event) {
       setFormData({
         title: event.title,
         description: event.description,
-        date: new Date(event.date).toISOString().split('T')[0],
+        date: event.date.slice(0, 16),
         location: event.location,
         category_id: event.category_id,
         poster_url: event.poster_url
       });
     } else {
-      // Reset form on open for "create" mode
       setFormData({
         title: '', description: '', date: '', location: '', category_id: 0, poster_url: ''
       });
     }
-    setSelectedFile(null); // Reset file input when event changes
+    setSelectedFile(null); 
   }, [event, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -128,7 +137,7 @@ const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, event, onEventCr
           </div>
           <div>
             <label htmlFor="date" className="block text-sm font-medium text-gray-700">Date</label>
-            <input type="date" name="date" id="date" value={formData.date} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required />
+            <input type="datetime-local" name="date" id="date" value={formData.date} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required />
           </div>
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
@@ -152,7 +161,6 @@ const EventForm: React.FC<EventFormProps> = ({ isOpen, onClose, event, onEventCr
                 {isUploading ? 'Uploading...' : 'Upload'}
               </button>
             </div>
-            {/* Image Preview */}
             {formData.poster_url && (
               <div className="mt-4">
                 <img src={formData.poster_url} alt="Poster preview" className="w-full h-auto rounded-md object-cover max-h-48" />

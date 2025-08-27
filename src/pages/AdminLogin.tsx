@@ -45,9 +45,8 @@ const AdminLogin: React.FC = () => {
   
     const response = await adminLoginAPI(formData);
     if (response) {
-      // Use response.data, not response.admin
       adminLogin(response.data, response.token); 
-      navigate('/admin/dashboard'); // Navigate to a specific admin page
+      navigate('/admin'); 
     }
   };
 
@@ -55,7 +54,6 @@ const AdminLogin: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -77,7 +75,6 @@ const AdminLogin: React.FC = () => {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Admin Email
@@ -105,7 +102,6 @@ const AdminLogin: React.FC = () => {
               )}
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Admin Password
@@ -145,14 +141,12 @@ const AdminLogin: React.FC = () => {
             </div>
           </div>
 
-          {/* General Error */}
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
               <p className="text-sm text-red-600">{errors.general}</p>
             </div>
           )}
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -161,7 +155,6 @@ const AdminLogin: React.FC = () => {
             {loading ? 'Signing in...' : 'Admin Sign In'}
           </button>
 
-          {/* Links */}
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
               Are you a regular user?{' '}

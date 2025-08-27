@@ -2,22 +2,23 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAuth as useAuthAPI } from '../hooks/useAuth';
-import { useAdmin } from '../hooks/useAdmin';
-import { FaUser, FaSignOutAlt, FaCalendarAlt, FaHome } from 'react-icons/fa';
+// import { useAdmin } from '../hooks/useAdmin';
+import { FaUser, FaSignOutAlt, FaHome } from 'react-icons/fa';
 
 const Navbar: React.FC = () => {
   const { user, admin, token, isUserLoggedIn, isAdminLoggedIn, userLogout, adminLogout } = useAuth();
   const { logout: userLogoutAPI } = useAuthAPI();
-  const { adminLogout: adminLogoutAPI } = useAdmin();
+  // const { adminLogout: adminLogoutAPI } = useAdmin();
   const navigate = useNavigate();
 
   const handleAdminLogout = async () => {
     if (token) {
-      adminLogout()
-      const success = await adminLogoutAPI(token);
-      if (success) {
-        navigate('/');
-      }
+      adminLogout();
+      navigate('/');
+      // const success = await adminLogoutAPI(token);
+      // if (success) {
+      //   navigate('/');
+      // }
     }
   };
 

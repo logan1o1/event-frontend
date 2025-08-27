@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth as useAuthContext } from '../contexts/AuthContext';
+// import { useAuth as useAuthContext } from '../contexts/AuthContext';
 import { useAuth as useAuthAPI } from '../hooks/useAuth';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaUser } from 'react-icons/fa';
 
@@ -15,7 +15,7 @@ const UserRegister: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const { userLogin } = useAuthContext();
+  // const { userLogin } = useAuthContext();
   const { register, loading, error } = useAuthAPI();
   const navigate = useNavigate();
 
@@ -71,7 +71,6 @@ const UserRegister: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }

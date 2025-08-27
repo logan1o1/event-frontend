@@ -1,12 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { API_BASE_URL, getHeaders } from '../config/api';
-import type { UserLoginData, UserRegistrationData, AuthResponse, User } from '../types';
-// import { useNavigate } from 'react-router-dom';
+import type { UserLoginData, UserRegistrationData, AuthResponse } from '../types';
 
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // const navigate = useNavigate();
 
   const login = async (credentials: UserLoginData): Promise<AuthResponse | null> => {
     setLoading(true);
@@ -60,6 +58,27 @@ export const useAuth = () => {
     }
   };
 
+  const getUsers = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        method: 'GET',
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.errors?.join(', ') || 'Get users failed');
+      }
+  
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Get users failed');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [])
+
   const logout = async (token: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -87,6 +106,7 @@ export const useAuth = () => {
   };
 
   return {
+    getUsers,
     login,
     register,
     logout,
